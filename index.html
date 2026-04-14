@@ -2036,10 +2036,40 @@
       }, 10);
     }
 
+    function pauseBackgroundMusic() {
+      const audioPlayer = document.getElementById('audio-player');
+      const playPauseBtn = document.getElementById('play-pause-btn');
+      if (audioPlayer && !audioPlayer.paused) {
+        if (typeof fadeInInterval !== 'undefined') clearInterval(fadeInInterval);
+        if (typeof fadeOutInterval !== 'undefined') clearInterval(fadeOutInterval);
+        audioPlayer.pause();
+        if (playPauseBtn) playPauseBtn.innerText = "▶";
+        if (typeof shuffleTimer !== 'undefined') clearTimeout(shuffleTimer);
+        window.wasPlayingBgMusic = true;
+      } else {
+        window.wasPlayingBgMusic = false;
+      }
+    }
+
+    function resumeBackgroundMusic() {
+      const audioPlayer = document.getElementById('audio-player');
+      const playPauseBtn = document.getElementById('play-pause-btn');
+      if (window.wasPlayingBgMusic && audioPlayer && audioPlayer.src && audioPlayer.paused) {
+        let playPromise = audioPlayer.play();
+        if (playPromise !== undefined) {
+          playPromise.then(_ => {
+            if (playPauseBtn) playPauseBtn.innerText = "⏸";
+            if (typeof startShuffleTimer === 'function') startShuffleTimer();
+          }).catch(e => console.log('Autoplay prevented:', e));
+        }
+      }
+    }
+
     function closePhotoSection() {
       document.body.classList.remove('hide-main-ui');
       const modal = document.getElementById('photo-sections-modal');
       modal.classList.remove('active');
+
       // Wait for transition to finish before hiding display
       setTimeout(() => {
         modal.style.display = 'none';
@@ -2491,14 +2521,8 @@
         setTimeout(() => {
           const playerModal = document.getElementById('secret-video-player-modal');
           const videoEl = document.getElementById('secret-video-el');
-          const audioPlayer = document.getElementById('audio-player');
           
-          if(audioPlayer && !audioPlayer.paused) {
-            audioPlayer.pause();
-            window.wasPlayingBgMusic = true;
-          } else {
-            window.wasPlayingBgMusic = false;
-          }
+          pauseBackgroundMusic();
           
           playerModal.style.display = 'flex';
           setTimeout(() => {
@@ -2525,9 +2549,7 @@
       videoEl.pause();
       videoEl.currentTime = 0;
       
-      if(window.wasPlayingBgMusic && audioPlayer) {
-        audioPlayer.play().catch(e => console.log('Audio autoplay blocked:', e));
-      }
+      resumeBackgroundMusic();
     }
   </script>
 
